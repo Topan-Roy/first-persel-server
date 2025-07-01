@@ -75,7 +75,18 @@ async function run() {
                 res.status(500).send({ message: 'Failed to fetch parcel' });
             }
         });
-
+          // POST: Create a new parcel
+        app.post('/parcels', async (req, res) => {
+            try {
+                const newParcel = req.body;
+                // newParcel.createdAt = new Date();
+                const result = await parcelCollection.insertOne(newParcel);
+                res.status(201).send(result);
+            } catch (error) {
+                console.error('Error inserting parcel:', error);
+                res.status(500).send({ message: 'Failed to create parcel' });
+            }
+        });
 
 
 
