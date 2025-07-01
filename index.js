@@ -32,12 +32,27 @@ async function run() {
         await client.connect();
 
         const db = client.db('parcelDB'); // database name
+        const usersCollection = db.collection('users');
         const parcelCollection = db.collection('parcels'); // collection
         const paymentsCollection = db.collection('payments');
         app.get('/parcels', async (req, res) => {
             const parcels = await parcelCollection.find().toArray();
             res.send(parcels);
         });
+
+        app.post('/users', async (req, res) => {
+            const email = req.body.email;
+            const userExists = await usersCollection.findOne({ email })
+            if (userExists) {
+                // update last log in
+                return res.status(200).send({ message: 'User already exists', inserted: false });
+            }
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+
 
         // parcels api
         // GET: All parcels OR parcels by user (created_by), sorted by latest
@@ -131,7 +146,7 @@ async function run() {
                 res.status(500).send({ message: 'Failed to get payments' });
             }
         });
-        
+
         // POST: Record payment and update parcel status
         app.post('/payments', async (req, res) => {
             try {
@@ -174,7 +189,7 @@ async function run() {
                 res.status(500).send({ message: 'Failed to record payment' });
             }
         });
-          app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', async (req, res) => {
             const amountInCents = req.body.amountInCents
             try {
                 const paymentIntent = await stripe.paymentIntents.create({
