@@ -75,7 +75,7 @@ async function run() {
                 res.status(500).send({ message: 'Failed to fetch parcel' });
             }
         });
-          // POST: Create a new parcel
+        // POST: Create a new parcel
         app.post('/parcels', async (req, res) => {
             try {
                 const newParcel = req.body;
@@ -85,6 +85,19 @@ async function run() {
             } catch (error) {
                 console.error('Error inserting parcel:', error);
                 res.status(500).send({ message: 'Failed to create parcel' });
+            }
+        });
+
+        app.delete('/parcels/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const result = await parcelCollection.deleteOne({ _id: new ObjectId(id) });
+
+                res.send(result);
+            } catch (error) {
+                console.error('Error deleting parcel:', error);
+                res.status(500).send({ message: 'Failed to delete parcel' });
             }
         });
 
