@@ -43,7 +43,7 @@ async function run() {
         const usersCollection = db.collection('users');
         const parcelCollection = db.collection('parcels'); // collection
         const paymentsCollection = db.collection('payments');
-
+         const ridersCollection = db.collection('riders');
         // custom middlewares
         const verifyFBToken = async (req, res, next) => {
             const authHeader = req.headers.authorization;
@@ -147,6 +147,14 @@ async function run() {
                 res.status(500).send({ message: 'Failed to delete parcel' });
             }
         });
+        // riders
+          app.post('/riders', async (req, res) => {
+            const rider = req.body;
+            const result = await ridersCollection.insertOne(rider);
+            res.send(result);
+        })
+
+
 
         app.post("/tracking", async (req, res) => {
             const { tracking_id, parcel_id, status, message, updated_by = '' } = req.body;
