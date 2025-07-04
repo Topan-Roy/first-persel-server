@@ -18,7 +18,7 @@ app.use(express.json());
 const serviceAccount = require("./firebase-admin-key.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount)
 });
 
 
@@ -43,7 +43,7 @@ async function run() {
         const usersCollection = db.collection('users');
         const parcelCollection = db.collection('parcels'); // collection
         const paymentsCollection = db.collection('payments');
-         const ridersCollection = db.collection('riders');
+        const ridersCollection = db.collection('riders');
         // custom middlewares
         const verifyFBToken = async (req, res, next) => {
             const authHeader = req.headers.authorization;
@@ -88,7 +88,7 @@ async function run() {
 
         // parcels api
         // GET: All parcels OR parcels by user (created_by), sorted by latest
-        app.get('/parcels',verifyFBToken, async (req, res) => {
+        app.get('/parcels', verifyFBToken, async (req, res) => {
             try {
                 const userEmail = req.query.email;
 
@@ -148,11 +148,46 @@ async function run() {
             }
         });
         // riders
-          app.post('/riders', async (req, res) => {
+        app.post('/riders', async (req, res) => {
             const rider = req.body;
             const result = await ridersCollection.insertOne(rider);
             res.send(result);
         })
+
+        app.get("/riders/pending", async (req, res) => {
+            try {
+                const pendingRiders = await ridersCollection
+                    .find({ status: "pending" })
+                    .toArray();
+
+                res.send(pendingRiders);
+            } catch (error) {
+                console.error("Failed to load pending riders:", error);
+                res.status(500).send({ message: "Failed to load pending riders" });
+            }
+        });
+
+        app.patch("/riders/:id/status", async (req, res) => {
+            const { id } = req.params;
+            const { status } = req.body;
+            const query = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set:
+                {
+                    status
+                }
+            }
+
+            try {
+                const result = await ridersCollection.updateOne(
+                    query, updateDoc
+
+                );
+                res.send(result);
+            } catch (err) {
+                res.status(500).send({ message: "Failed to update rider status" });
+            }
+        });
 
 
 
@@ -172,10 +207,10 @@ async function run() {
             res.send({ success: true, insertedId: result.insertedId });
         });
 
-        app.get('/payments',verifyFBToken, async (req, res) => {
+        app.get('/payments', verifyFBToken, async (req, res) => {
             try {
                 const userEmail = req.query.email;
-                 console.log('decocded', req.decoded)
+                console.log('decocded', req.decoded)
                 if (req.decoded.email !== userEmail) {
                     return res.status(403).send({ message: 'forbidden access' })
                 }
