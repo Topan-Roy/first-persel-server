@@ -136,7 +136,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch("/users/:id/role", verifyFBToken,verifyAdmin, async (req, res) => {
+        app.patch("/users/:id/role", verifyFBToken, verifyAdmin, async (req, res) => {
             const { id } = req.params;
             const { role } = req.body;
 
@@ -161,12 +161,25 @@ async function run() {
         // GET: All parcels OR parcels by user (created_by), sorted by latest
         app.get('/parcels', verifyFBToken, async (req, res) => {
             try {
-                const userEmail = req.query.email;
+                const { email, payment_status, delivery_status } = req.query;
+                let query = {}
+                if (email) {
+                    query = { created_by: email }
+                }
 
-                const query = userEmail ? { created_by: userEmail } : {};
+                if (payment_status) {
+                    query.payment_status = payment_status
+                }
+
+                if (delivery_status) {
+                    query.delivery_status = delivery_status
+                }
+
                 const options = {
                     sort: { createdAt: -1 }, // Newest first
                 };
+
+                console.log('parcel query', req.query, query)
 
                 const parcels = await parcelCollection.find(query, options).toArray();
                 res.send(parcels);
@@ -240,10 +253,29 @@ async function run() {
 
 
 
-        app.get("/riders/active", verifyFBToken,verifyAdmin, async (req, res) => {
+        app.get("/riders/active", verifyFBToken, verifyAdmin, async (req, res) => {
             const result = await ridersCollection.find({ status: "active" }).toArray();
             res.send(result);
         });
+
+        app.get("/riders/available", async (req, res) => {
+            const { district } = req.query;
+
+            try {
+                const riders = await ridersCollection
+                    .find({
+                        district,
+                        // status: { $in: ["approved", "active"] },
+                        // work_status: "available",
+                    })
+                    .toArray();
+
+                res.send(riders);
+            } catch (err) {
+                res.status(500).send({ message: "Failed to load riders" });
+            }
+        });
+
 
         app.patch("/riders/:id/status", async (req, res) => {
             const { id } = req.params;
