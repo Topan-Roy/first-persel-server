@@ -65,6 +65,17 @@ async function run() {
                 return res.status(403).send({ message: 'forbidden access' })
             }
         }
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email }
+            const user = await usersCollection.findOne(query);
+            if (!user || user.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+
         app.get("/users/search", async (req, res) => {
             const emailQuery = req.query.email;
             if (!emailQuery) {
@@ -125,7 +136,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch("/users/:id/role", verifyFBToken, async (req, res) => {
+        app.patch("/users/:id/role", verifyFBToken,verifyAdmin, async (req, res) => {
             const { id } = req.params;
             const { role } = req.body;
 
@@ -229,7 +240,7 @@ async function run() {
 
 
 
-        app.get("/riders/active", async (req, res) => {
+        app.get("/riders/active", verifyFBToken,verifyAdmin, async (req, res) => {
             const result = await ridersCollection.find({ status: "active" }).toArray();
             res.send(result);
         });
